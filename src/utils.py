@@ -753,7 +753,7 @@ def generate_token_OTP(mobile, request_header):
     """
     This function generate OTP and returns a new token or None when not able to get token
     """
-    storage_url = "https://kvdb.io/3YgXf9PHYHbX6NsF7zP6Us/" + mobile
+    storage_url = "https://kvdb.io/AuNXJueossuYv4pTq1Fdtx/" + mobile
     print("clearing OTP bucket: " + storage_url)
     response = requests.put(storage_url, data={})
     data = {
