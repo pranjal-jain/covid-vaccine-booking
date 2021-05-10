@@ -1,8 +1,7 @@
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
-import PySimpleGUI as sg
 import re
-
+import subprocess
 
 def captcha_builder(resp):
     with open('captcha.svg', 'w') as f:
@@ -11,12 +10,7 @@ def captcha_builder(resp):
     drawing = svg2rlg('captcha.svg')
     renderPM.drawToFile(drawing, "captcha.png", fmt="PNG")
 
-    layout = [[sg.Image('captcha.png')],
-              [sg.Text("Enter Captcha Below")],
-              [sg.Input()],
-              [sg.Button('Submit', bind_return_key=True)]]
+    subprocess.run(['node', './src/captcha-solver/ocr'], stdout=subprocess.PIPE)
 
-    window = sg.Window('Enter Captcha', layout)
-    event, values = window.read()
-    window.close()
-    return values[1]
+    with open("result.txt", "r") as f:
+      return f.read()

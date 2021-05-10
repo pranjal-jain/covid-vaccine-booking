@@ -389,6 +389,7 @@ def book_appointment(request_header, details, mobile):
         valid_captcha = True
         while valid_captcha:
             captcha = generate_captcha(request_header)
+            print("\n\nCaptcha decoded is: " + captcha + "\n\n")
            # os.system('say "Slot Spotted."')
             details["captcha"] = captcha
 

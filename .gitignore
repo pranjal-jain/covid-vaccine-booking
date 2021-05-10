@@ -135,3 +135,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+result.txt
+log.txt
+vaccine-booking-details.json
+*.DS_Store
+**/node_modules
+captcha.png
+captcha.svg
+
+
