@@ -182,6 +182,12 @@ def collect_user_details(request_header):
         location_dtls = get_pincodes()
 
     print(
+        "\n================================= Chosen Centers =================================\n"
+    )
+    chosen_centers = input("Enter comma separated Center IDs (Optional): ")
+    chosen_centers = [center.strip() for center in chosen_centers.split(",") if len(center.strip())]
+
+    print(
         "\n================================= Additional Info =================================\n"
     )
 
@@ -240,6 +246,7 @@ def collect_user_details(request_header):
         "start_date": start_date,
         "vaccine_type": vaccine_type,
         "fee_type": fee_type,
+        "chosen_centers": chosen_centers,
     }
 
     return collected_details
@@ -386,47 +393,45 @@ def book_appointment(request_header, details, mobile):
         3. Returns True or False depending on Token Validity
     """
     try:
-        valid_captcha = True
-        while valid_captcha:
-            captcha = generate_captcha(request_header)
-            print("\n\nCaptcha decoded is: " + captcha + "\n\n")
-           # os.system('say "Slot Spotted."')
-            details["captcha"] = captcha
+        captcha = generate_captcha(request_header)
+        print("\n\nCaptcha decoded is: " + captcha + "\n\n")
+        # os.system('say "Slot Spotted."')
+        details["captcha"] = captcha
 
+        print(
+            "================================= ATTEMPTING BOOKING =================================================="
+        )
+
+        resp = requests.post(BOOKING_URL, headers=request_header, json=details)
+        print(f"Booking Response Code: {resp.status_code}")
+        print(f"Booking Response : {resp.text}")
+
+        if resp.status_code == 401:
+            print("TOKEN INVALID")
+            return False
+
+        elif resp.status_code == 200:
+            beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
             print(
-                "================================= ATTEMPTING BOOKING =================================================="
+                "##############    BOOKED!  ############################    BOOKED!  ##############"
             )
+            print(
+                "                        Hey, Hey, Hey! It's your lucky day!                       "
+            )
+            print("\nPress any key thrice to exit program.")
+            requests.put("https://kvdb.io/2EKK2edg4qNknwfP1PsKqV/" + mobile, data={})
+            os.system("pause")
+            os.system("pause")
+            os.system("pause")
+            sys.exit()
 
-            resp = requests.post(BOOKING_URL, headers=request_header, json=details)
-            print(f"Booking Response Code: {resp.status_code}")
-            print(f"Booking Response : {resp.text}")
+        elif resp.status_code == 400:
+            print(f"Response: {resp.status_code} : {resp.text}")
+            pass
 
-            if resp.status_code == 401:
-                print("TOKEN INVALID")
-                return False
-
-            elif resp.status_code == 200:
-                beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
-                print(
-                    "##############    BOOKED!  ############################    BOOKED!  ##############"
-                )
-                print(
-                    "                        Hey, Hey, Hey! It's your lucky day!                       "
-                )
-                print("\nPress any key thrice to exit program.")
-                requests.put("https://kvdb.io/2EKK2edg4qNknwfP1PsKqV/" + mobile, data={})
-                os.system("pause")
-                os.system("pause")
-                os.system("pause")
-                sys.exit()
-
-            elif resp.status_code == 400:
-                print(f"Response: {resp.status_code} : {resp.text}")
-                pass
-
-            else:
-                print(f"Response: {resp.status_code} : {resp.text}")
-                return True
+        else:
+            print(f"Response: {resp.status_code} : {resp.text}")
+            return True
 
     except Exception as e:
         print(str(e))
@@ -454,6 +459,7 @@ def check_and_book(
         vaccine_type = kwargs["vaccine_type"]
         fee_type = kwargs["fee_type"]
         mobile = kwargs["mobile"]
+        chosen_centers = kwargs["chosen_centers"]
 
         if isinstance(start_date, int) and start_date == 2:
             start_date = (
@@ -507,6 +513,13 @@ def check_and_book(
                 cleaned_options_for_display.append(item)
 
             display_table(cleaned_options_for_display)
+
+            if len(chosen_centers):
+                options = [option for option in options if str(option['center_id']) in chosen_centers]
+                if(len(options) == 0):
+                  print("\n====== Not in chosen centers :( ======\n")
+                  return True
+
             randrow = random.randint(1, len(options))
             randcol = random.randint(1, len(options[randrow - 1]["slots"]))
             choice = str(randrow) + "." + str(randcol)

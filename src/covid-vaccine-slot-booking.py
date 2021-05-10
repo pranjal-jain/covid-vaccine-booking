@@ -77,7 +77,8 @@ def main():
                                          start_date=info.start_date,
                                          vaccine_type=info.vaccine_type,
                                          fee_type=info.fee_type,
-                                         mobile=mobile)
+                                         mobile=mobile,
+                                         chosen_centers=info.chosen_centers)
 
             # check if token is still valid
             beneficiaries_list = requests.get(BENEFICIARIES_URL, headers=request_header)
