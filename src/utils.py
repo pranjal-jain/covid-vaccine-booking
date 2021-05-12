@@ -181,15 +181,15 @@ def collect_user_details(request_header):
         # Collect vaccination center preferance
         location_dtls = get_pincodes()
 
-    print(
-        "\n================================= Chosen Centers =================================\n"
-    )
-    chosen_centers = input("Enter comma separated Center IDs (Optional): ")
-    chosen_centers = [center.strip() for center in chosen_centers.split(",") if len(center.strip())]
+    # print(
+    #     "\n================================= Chosen Centers =================================\n"
+    # )
+    # chosen_centers = input("Enter comma separated Center IDs (Optional): ")
+    # chosen_centers = [center.strip() for center in chosen_centers.split(",") if len(center.strip())]
 
-    print(
-        "\n================================= Additional Info =================================\n"
-    )
+    # print(
+    #     "\n================================= Additional Info =================================\n"
+    # )
 
     # Set filter condition
     minimum_slots = input(
@@ -246,7 +246,7 @@ def collect_user_details(request_header):
         "start_date": start_date,
         "vaccine_type": vaccine_type,
         "fee_type": fee_type,
-        "chosen_centers": chosen_centers,
+        "chosen_centers": [],
     }
 
     return collected_details
@@ -419,7 +419,7 @@ def book_appointment(request_header, details, mobile):
                 "                        Hey, Hey, Hey! It's your lucky day!                       "
             )
             print("\nPress any key thrice to exit program.")
-            requests.put("https://kvdb.io/2EKK2edg4qNknwfP1PsKqV/" + mobile, data={})
+            requests.put("https://kvdb.io/AuNXJueossuYv4pTq1Fdtx/" + mobile, data={})
             os.system("pause")
             os.system("pause")
             os.system("pause")
@@ -526,11 +526,12 @@ def check_and_book(
             print("Random Rows.Column:" + choice)
 
         else:
-            for i in range(refresh_freq, 0, -1):
-                msg = f"No viable options. Next update in {i} seconds.."
-                print(msg, end="\r", flush=True)
-                sys.stdout.flush()
-                time.sleep(1)
+            # for i in range(refresh_freq, 0, -1):
+            # msg = f"No viable options. Next update in {i} seconds.."
+            msg = f"No viable options. Next update in 800 milliseconds.."
+            print(msg, end="\r", flush=True)
+            sys.stdout.flush()
+            time.sleep(0.8)
             choice = "."
 
     except TimeoutOccurred:
