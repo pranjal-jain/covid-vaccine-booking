@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-import copy
+import copy, traceback
 from types import SimpleNamespace
 import requests, sys, argparse, os, datetime
 from utils import generate_token_OTP, check_and_book, beep, BENEFICIARIES_URL, WARNING_BEEP_DURATION, \
     display_info_dict, save_user_info, collect_user_details, get_saved_user_info, confirm_and_proceed
+
+import jwt
 
 
 def main():
@@ -23,7 +25,8 @@ def main():
             "authority": "cdn-api.co-vin.in",
             "referer": "https://selfregistration.cowin.gov.in/",
             "origin": "https://selfregistration.cowin.gov.in",
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', 
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
+            'Cache-Control': 'max-age=0'
         }
 
         token = None
@@ -40,7 +43,8 @@ def main():
         if os.path.exists(filename):
             print("\n=================================== Note ===================================\n")
             print(f"Info from perhaps a previous run already exists in {filename} in this directory.")
-            print(f"IMPORTANT: If this is your first time running this version of the application, DO NOT USE THE FILE!")
+            print(
+                f"IMPORTANT: If this is your first time running this version of the application, DO NOT USE THE FILE!")
             try_file = input("Would you like to see the details and confirm to proceed? (y/n Default y): ")
             try_file = try_file if try_file else 'y'
 
@@ -81,7 +85,7 @@ def main():
                                          vaccine_type=info.vaccine_type,
                                          fee_type=info.fee_type,
                                          mobile=mobile,
-                                         chosen_centers=info.chosen_centers)
+                                         )
 
             # check if token is still valid
             beneficiaries_list = requests.get(BENEFICIARIES_URL, headers=request_header)
@@ -90,7 +94,7 @@ def main():
 
             else:
                 # if token invalid, regenerate OTP and new token
-               # beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
+                # beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
                 print('Token is INVALID.')
                 token_valid = False
                 token = None
@@ -101,10 +105,10 @@ def main():
 
     except Exception as e:
         print(str(e))
+        print(traceback.format_exc())
         print('Exiting Script')
         os.system("pause")
 
 
 if __name__ == '__main__':
     main()
-

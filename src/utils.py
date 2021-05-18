@@ -1,4 +1,4 @@
-import json
+import json, traceback
 from hashlib import sha256
 from collections import Counter
 from inputimeout import inputimeout, TimeoutOccurred
@@ -40,22 +40,21 @@ else:
         winsound.Beep(freq, duration)
 
 
-def viable_options(resp, minimum_slots, min_age_booking, fee_type):
+def viable_options(resp, minimum_slots, min_age_booking, fee_type, dose_num=1):
     options = []
     if len(resp["centers"]) >= 0:
         for center in resp["centers"]:
             for session in center["sessions"]:
-                if (
-                    (session["available_capacity"] >= minimum_slots)
-                    and (session["min_age_limit"] <= min_age_booking)
-                    and (center["fee_type"] in fee_type)
-                ):
+                available_capacity = min(session[f'available_capacity_dose{dose_num}'], session['available_capacity'])
+                if (available_capacity >= minimum_slots) \
+                        and (session["min_age_limit"] <= min_age_booking) \
+                        and (center["fee_type"] in fee_type):
                     out = {
                         "name": center["name"],
                         "district": center["district_name"],
                         "pincode": center["pincode"],
                         "center_id": center["center_id"],
-                        "available": session["available_capacity"],
+                        "available": available_capacity,
                         "date": session["date"],
                         "slots": session["slots"],
                         "session_id": session["session_id"],
@@ -185,8 +184,8 @@ def collect_user_details(request_header):
     #     "\n================================= Chosen Centers =================================\n"
     # )
     # chosen_centers = input("Enter comma separated Center IDs (Optional): ")
-    # chosen_centers = [center.strip() for center in chosen_centers.split(",") if len(center.strip())]
-
+    # chosen_centers = [center.strip() for center in chosen_centers.split(",") if len(center.strip()) > 0]
+    #
     # print(
     #     "\n================================= Additional Info =================================\n"
     # )
@@ -246,7 +245,7 @@ def collect_user_details(request_header):
         "start_date": start_date,
         "vaccine_type": vaccine_type,
         "fee_type": fee_type,
-        "chosen_centers": [],
+        # "chosen_centers": [],
     }
 
     return collected_details
@@ -419,7 +418,6 @@ def book_appointment(request_header, details, mobile):
                 "                        Hey, Hey, Hey! It's your lucky day!                       "
             )
             print("\nPress any key thrice to exit program.")
-            requests.put("https://kvdb.io/AuNXJueossuYv4pTq1Fdtx/" + mobile, data={})
             os.system("pause")
             os.system("pause")
             os.system("pause")
@@ -435,6 +433,7 @@ def book_appointment(request_header, details, mobile):
 
     except Exception as e:
         print(str(e))
+        print(traceback.format_exc())
         beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
 
 
@@ -459,7 +458,7 @@ def check_and_book(
         vaccine_type = kwargs["vaccine_type"]
         fee_type = kwargs["fee_type"]
         mobile = kwargs["mobile"]
-        chosen_centers = kwargs["chosen_centers"]
+        # chosen_centers = kwargs["chosen_centers"]
 
         if isinstance(start_date, int) and start_date == 2:
             start_date = (
@@ -514,11 +513,11 @@ def check_and_book(
 
             display_table(cleaned_options_for_display)
 
-            if len(chosen_centers):
-                options = [option for option in options if str(option['center_id']) in chosen_centers]
-                if(len(options) == 0):
-                  print("\n====== Not in chosen centers :( ======\n")
-                  return True
+            # if len(chosen_centers):
+            #     options = [option for option in options if str(option['center_id']) in chosen_centers]
+            #     if(len(options) == 0):
+            #       print("\n====== Not in chosen centers :( ======\n")
+            #       return True
 
             randrow = random.randint(1, len(options))
             randcol = random.randint(1, len(options[randrow - 1]["slots"]))
@@ -528,10 +527,10 @@ def check_and_book(
         else:
             # for i in range(refresh_freq, 0, -1):
             # msg = f"No viable options. Next update in {i} seconds.."
-            msg = f"No viable options. Next update in 800 milliseconds.."
+            msg = f"No viable options. Next update in 200 milliseconds.."
             print(msg, end="\r", flush=True)
             sys.stdout.flush()
-            time.sleep(0.8)
+            time.sleep(0.5)
             choice = "."
 
     except TimeoutOccurred:
@@ -767,7 +766,7 @@ def generate_token_OTP(mobile, request_header):
     """
     This function generate OTP and returns a new token or None when not able to get token
     """
-    storage_url = "https://kvdb.io/AuNXJueossuYv4pTq1Fdtx/" + mobile
+    storage_url = "https://kvdb.io/QCsQDE7Kcy3dj4F6EZBTot/" + mobile
     print("clearing OTP bucket: " + storage_url)
     response = requests.put(storage_url, data={})
     data = {
