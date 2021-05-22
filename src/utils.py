@@ -793,8 +793,7 @@ def generate_token_OTP(mobile, request_header):
     while time.time() < t_end:
         response = requests.get(storage_url)
         if response.status_code == 200:
-            print("OTP SMS is:" + response.text)
-            print("OTP SMS len is:" + str(len(response.text)))
+            print(f"OTP SMS is:{response.text}\nLength is {len(response.text)}\nRemaining time is {int(t_end - time.time())}s")
 
             OTP = response.text
             OTP = OTP.replace("Your OTP to register/access CoWIN is ", "")

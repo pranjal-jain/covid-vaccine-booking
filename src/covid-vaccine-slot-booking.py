@@ -2,12 +2,14 @@
 
 import copy, traceback
 from types import SimpleNamespace
-import requests, sys, argparse, os, datetime
+import requests, sys, argparse, os, datetime, time
 from utils import generate_token_OTP, check_and_book, beep, BENEFICIARIES_URL, WARNING_BEEP_DURATION, \
     display_info_dict, save_user_info, collect_user_details, get_saved_user_info, confirm_and_proceed
 
 import jwt
+from threading import Thread
 
+thread_started = False
 
 def main():
     parser = argparse.ArgumentParser()
@@ -30,13 +32,15 @@ def main():
         }
 
         token = None
+        mobile = input("Enter the registered mobile number: ")
         if args.token:
             token = args.token
         else:
-            mobile = input("Enter the registered mobile number: ")
             while token is None:
                 token = generate_token_OTP(mobile, base_request_header)
 
+        with open("token", "w") as fp:
+            fp.write(token)
         request_header = copy.deepcopy(base_request_header)
         request_header["Authorization"] = f"Bearer {token}"
 
@@ -71,9 +75,13 @@ def main():
 
         info = SimpleNamespace(**collected_details)
 
+
+        global thread_started
         token_valid = True
         while token_valid:
             request_header = copy.deepcopy(base_request_header)
+            with open("token", "r") as fp:
+                token = fp.read()
             request_header["Authorization"] = f"Bearer {token}"
 
             # call function to check and book slots
@@ -87,27 +95,31 @@ def main():
                                          mobile=mobile,
                                          )
 
-            # check if token is still valid
-            beneficiaries_list = requests.get(BENEFICIARIES_URL, headers=request_header)
-            if beneficiaries_list.status_code == 200:
-                token_valid = True
-
-            else:
-                # if token invalid, regenerate OTP and new token
-                # beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
-                print('Token is INVALID.')
-                token_valid = False
-                token = None
-
-                while token is None:
-                    token = generate_token_OTP(mobile, base_request_header)
-                token_valid = True
+            if not thread_started and time.time() + 200 > jwt.decode(token, algorithms=["HS256"], options={"verify_signature": False})["exp"]:
+                thread1 = Thread(target=refresh_token, args=(mobile, base_request_header,))
+                thread1.start()
+                thread_started = True
 
     except Exception as e:
         print(str(e))
         print(traceback.format_exc())
         print('Exiting Script')
         os.system("pause")
+
+
+def refresh_token(mobile, base_request_header):
+    token = None
+    while token is None:
+        token = generate_token_OTP(mobile, base_request_header)
+
+    with open("token", "w") as fp:
+        fp.write(token)
+
+    time.sleep(2)
+    global thread_started
+    thread_started = False
+    return
+
 
 
 if __name__ == '__main__':
