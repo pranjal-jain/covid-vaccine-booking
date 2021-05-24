@@ -3,6 +3,15 @@ from reportlab.graphics import renderPM
 import re
 import subprocess
 
+
+def captcha_builder_manual(resp):
+    return captcha_builder(resp)
+
+
+def captcha_builder_auto(resp):
+    return captcha_builder(resp)
+
+
 def captcha_builder(resp):
     with open('captcha.svg', 'w') as f:
         f.write(re.sub('(<path d=)(.*?)(fill=\"none\"/>)', '', resp['captcha']))
@@ -13,4 +22,4 @@ def captcha_builder(resp):
     subprocess.run(['node', './src/captcha-solver/ocr'], stdout=subprocess.PIPE)
 
     with open("result.txt", "r") as f:
-      return f.read()
+        return f.read()
