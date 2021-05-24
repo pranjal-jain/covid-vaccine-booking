@@ -16,10 +16,8 @@ from threading import Thread
 def is_token_valid(token):
     payload = jwt.decode(token, options={"verify_signature": False})
     remaining_seconds = payload['exp'] - int(time.time())
-    if remaining_seconds <= 30:  # 30 secs early before expiry for clock issues
+    if remaining_seconds <= 180:  # 180 secs early before expiry for clock issues
         return False
-    if remaining_seconds <= 60:
-        print("Token is about to expire in next 1 min ...")
     return True
 
 
@@ -48,7 +46,6 @@ def main():
         token = None
         mobile = input("Enter the registered mobile number: ")
         filename = filename + mobile + ".json"
-        otp_pref = True
         if args.token:
             token = args.token
         else:

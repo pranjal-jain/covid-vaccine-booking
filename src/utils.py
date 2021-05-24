@@ -81,6 +81,9 @@ def display_table(dict_list):
         2. Add an Index column, and
         3. Displays the data in tabular format
     """
+    if len(dict_list) == 0:
+        return
+
     header = ["idx"] + list(dict_list[0].keys())
     rows = [[idx + 1] + list(x.values()) for idx, x in enumerate(dict_list)]
     print(tabulate.tabulate(rows, header, tablefmt="grid"))

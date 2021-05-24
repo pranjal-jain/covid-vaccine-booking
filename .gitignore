@@ -138,6 +138,7 @@ dmypy.json
 
 result.txt
 log.txt
+vaccine-booking-details-*.json
 vaccine-booking-details.json
 *.DS_Store
 **/node_modules
