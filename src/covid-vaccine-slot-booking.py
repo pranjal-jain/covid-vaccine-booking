@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import copy, traceback
-import time
+import copy
+import traceback
 from types import SimpleNamespace
-import requests, sys, argparse, os, datetime
-import jwt
-from utils import generate_token_OTP, generate_token_OTP_manual, check_and_book, beep, BENEFICIARIES_URL, WARNING_BEEP_DURATION, \
+from utils import generate_token_OTP, check_and_book, beep, WARNING_BEEP_DURATION, \
     display_info_dict, save_user_info, collect_user_details, get_saved_user_info, confirm_and_proceed, get_dose_num, display_table, fetch_beneficiaries
-import requests, sys, argparse, os, datetime, time
+import argparse, os, time
 
 import jwt
 from threading import Thread
@@ -87,16 +85,16 @@ def main():
         # HACK: Temporary workaround for not supporting reschedule appointments
         beneficiary_ref_ids = [beneficiary["bref_id"]
                                for beneficiary in collected_details["beneficiary_dtls"]]
-        beneficiary_dtls = fetch_beneficiaries(request_header)
+        beneficiary_dtls    = fetch_beneficiaries(request_header)
         if beneficiary_dtls.status_code == 200:
-            beneficiary_dtls = [beneficiary
-                                for beneficiary in beneficiary_dtls.json()['beneficiaries']
-                                if beneficiary['beneficiary_reference_id'] in beneficiary_ref_ids]
+            beneficiary_dtls    = [beneficiary
+                                   for beneficiary in beneficiary_dtls.json()['beneficiaries']
+                                   if  beneficiary['beneficiary_reference_id'] in beneficiary_ref_ids]
             active_appointments = []
             for beneficiary in beneficiary_dtls:
                 expected_appointments = (1 if beneficiary['vaccination_status'] == "Partially Vaccinated" else 0)
                 if len(beneficiary['appointments']) > expected_appointments:
-                    data = beneficiary['appointments'][expected_appointments]
+                    data             = beneficiary['appointments'][expected_appointments]
                     beneficiary_data = {'name': data['name'],
                                         'state_name': data['state_name'],
                                         'dose': data['dose'],
@@ -127,7 +125,7 @@ def main():
             try:
                 token_valid = is_token_valid(token)
 
-                # token is invalid ?
+                # token is invalid ? 
                 # If yes, generate new one
                 if not token_valid and not thread_started :
                     thread1 = Thread(target=refresh_token, args=(mobile, base_request_header,))

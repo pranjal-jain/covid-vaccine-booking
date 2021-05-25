@@ -92,7 +92,7 @@ def display_table(dict_list):
 def display_info_dict(details):
     for key, value in details.items():
         if isinstance(value, list):
-            if all(isinstance(item, dict) for item in value):
+            if len(value) > 0 and all(isinstance(item, dict) for item in value):
                 print(f"\t{key}:")
                 display_table(value)
             else:
@@ -240,32 +240,35 @@ def collect_user_details(request_header):
         minimum_slots = len(beneficiary_dtls)
 
     # Get refresh frequency
-    refresh_freq = input("How often do you want to refresh the calendar (in seconds)? Default 10. Minimum 5. "
-                         "(You might be blocked if the value is too low, in that case please try "
-                         "after a while with a lower frequency) : ")
+    refresh_freq = input(
+        "How often do you want to refresh the calendar (in seconds)? Default 10. Minimum 5. (You might be blocked if the value is too low, in that case please try after a while with a lower frequency) : "
+    )
 
     refresh_freq = int(refresh_freq) if refresh_freq and int(refresh_freq) >= 1 else 15
-
-    # Checking if partially vaccinated and thereby checking the the due date for dose2
+    
+    
+    #Checking if partially vaccinated and thereby checking the the due date for dose2
     if all([beneficiary['status'] == 'Partially Vaccinated' for beneficiary in beneficiary_dtls]):
-        today = datetime.datetime.today()
-        today = today.strftime("%d-%m-%Y")
+        today=datetime.datetime.today()
+        today=today.strftime("%d-%m-%Y")
         due_date = [beneficiary["dose2_due_date"] for beneficiary in beneficiary_dtls]
-        dates = Counter(due_date)
+        dates=Counter(due_date)
         if len(dates.keys()) != 1:
             print(
                 f"All beneficiaries in one attempt should have the same due date. Found {len(dates.keys())}"
             )
             os.system("pause")
             sys.exit(1)
-
-        if (datetime.datetime.strptime(due_date[0], "%d-%m-%Y") -
-            datetime.datetime.strptime(str(today), "%d-%m-%Y")).days > 0:
+            
+            
+        if (datetime.datetime.strptime(due_date[0], "%d-%m-%Y")-datetime.datetime.strptime(str(today), "%d-%m-%Y")).days > 0:
             print("\nHaven't reached the due date for your second dose")
-            search_due_date=input("\nDo you want to search for the week starting from your due date(y/n) Default n:")
-            if search_due_date == "y":
-
-                start_date = due_date[0]
+            search_due_date=input(
+                "\nDo you want to search for the week starting from your due date(y/n) Default n:"
+            )
+            if search_due_date=="y":
+                
+                start_date=due_date[0]
             else:
                 os.system("pause")
                 sys.exit(1)
@@ -275,15 +278,14 @@ def collect_user_details(request_header):
     else:
         # Non vaccinated
         start_date=start_date_search()
-
+        
     fee_type = get_fee_type_preference()
 
     print(
         "\n=========== CAUTION! =========== CAUTION! CAUTION! =============== CAUTION! =======\n"
     )
     print(
-        "===== BE CAREFUL WITH THIS OPTION! AUTO-BOOKING WILL BOOK THE FIRST AVAILABLE CENTRE, "
-        "DATE, AND A RANDOM SLOT! ====="
+        "===== BE CAREFUL WITH THIS OPTION! AUTO-BOOKING WILL BOOK THE FIRST AVAILABLE CENTRE, DATE, AND A RANDOM SLOT! ====="
     )
     auto_book = "yes-please"
 
@@ -320,7 +322,7 @@ def filter_centers_by_age(resp, min_age_booking):
             for session in list(center["sessions"]):
                 if session['min_age_limit'] != center_age_filter:
                     center["sessions"].remove(session)
-                    if len(center["sessions"]) == 0:
+                    if (len(center["sessions"]) == 0):
                         resp["centers"].remove(center)
 
     return resp
@@ -335,7 +337,7 @@ def check_calendar_by_district(
         min_age_booking,
         fee_type,
         dose_num,
-        beep=True
+        beep_required=True
 ):
     """
     This function
@@ -382,7 +384,7 @@ def check_calendar_by_district(
                 pass
 
         # beep only when needed
-        if beep:
+        if beep_required:
             for location in location_dtls:
                 if location["district_name"] in [option["district"] for option in options]:
                     for _ in range(2):
@@ -589,19 +591,19 @@ def check_and_book(
                 min_age_booking,
                 fee_type,
                 dose_num,
-                beep=False
+                beep_required=False
             )
 
-            pincode_filtered_options = []
-
-            for option in pincode_filtered_options:
-                for location in pin_code_location_dtls:
-                    if int(location["pincode"]) in [option["pincode"] for option in options]:
-                        # ADD this filtered PIN code option
-                        pincode_filtered_options.append()
-                        for _ in range(2):
-                            beep(location["alert_freq"], 150)
-            options = pincode_filtered_options
+            if not isinstance(options, bool):
+                pincode_filtered_options = []
+                for option in options:
+                    for location in pin_code_location_dtls:
+                        if int(location["pincode"]) == int(option["pincode"]):
+                            # ADD this filtered PIN code option
+                            pincode_filtered_options.append(option)
+                            for _ in range(2):
+                                beep(location["alert_freq"], 150)
+                options = pincode_filtered_options
 
         elif search_option == 2:
             options = check_calendar_by_district(
@@ -613,7 +615,7 @@ def check_and_book(
                 min_age_booking,
                 fee_type,
                 dose_num,
-                beep=True
+                beep_required=True
             )
         else:
             options = check_calendar_by_pincode(
@@ -869,7 +871,7 @@ def fetch_beneficiaries(request_header):
     return requests.get(BENEFICIARIES_URL, headers=request_header)
 
 
-
+    
 def vaccine_dose2_duedate(vaccine_type):
     """
     This function
@@ -879,7 +881,7 @@ def vaccine_dose2_duedate(vaccine_type):
     covishield_due_date=84
     covaxin_due_date=28
     sputnikV_due_date=21
-
+    
     if vaccine_type=="COVISHIELD":
         return covishield_due_date
     elif vaccine_type=="COVAXIN":
@@ -902,7 +904,7 @@ def get_beneficiaries(request_header):
 
     if beneficiaries.status_code == 200:
         beneficiaries = beneficiaries.json()["beneficiaries"]
-
+        
 
         refined_beneficiaries = []
         for beneficiary in beneficiaries:
@@ -912,7 +914,7 @@ def get_beneficiaries(request_header):
             if beneficiary["vaccination_status"]=="Partially Vaccinated":
                 vaccinated=True
                 days_remaining=vaccine_dose2_duedate(beneficiary["vaccine"])
-
+                               
                 dose1_date=datetime.datetime.strptime(beneficiary["dose1_date"], "%d-%m-%Y")
                 beneficiary["dose2_due_date"]=dose1_date+datetime.timedelta(days=days_remaining)
             else:
@@ -960,7 +962,7 @@ def get_beneficiaries(request_header):
                 "status": item["vaccination_status"],
                 "dose1_date":item["dose1_date"]
             }
-
+                                
             for idx, item in enumerate(beneficiaries)
             if idx in beneficiary_idx
         ]
@@ -968,7 +970,7 @@ def get_beneficiaries(request_header):
         for beneficiary in reqd_beneficiaries:
                 if beneficiary["status"]=="Partially Vaccinated":
                     days_remaining=vaccine_dose2_duedate(beneficiary["vaccine"])
-
+                        
                     dose1_date=datetime.datetime.strptime(beneficiary["dose1_date"], "%d-%m-%Y")
                     dose2DueDate=dose1_date+datetime.timedelta(days=days_remaining)
                     beneficiary["dose2_due_date"]=dose2DueDate.strftime("%d-%m-%Y")
@@ -1134,4 +1136,3 @@ def generate_token_OTP_manual(mobile, request_header):
 
         except Exception as e:
             print(str(e))
-
